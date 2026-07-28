@@ -3,126 +3,48 @@
 
 import java.util.Scanner;
 import java.util.Random;
-import java.io.PrintWriter;
-import java.io.File;
 
-public class Main {
-    static final String ARMY1_FILE = "in_army1names.txt";
-    static final String ARMY2_FILE = "in_army2names.txt";
-    static final String OUTPUT_FILE = "out_battle_log.txt";
-
-    enum MenuOptions { INVALID, BATTLE, QUIT }
-
-    public static void main(String[] args) {
-        Scanner input = new Scanner(System.in);
-        Game game = new Game();
-        PrintWriter fileOut = null;
-
-        try {
-            fileOut = new PrintWriter(new java.io.FileWriter(OUTPUT_FILE, true));
-        }
-        catch (java.io.IOException error) {
-            System.out.println("Could not open " + OUTPUT_FILE);
-        }
-
-        MenuOptions userChoice = MenuOptions.INVALID;
-        boolean keepRunning = true;
-
-        while (keepRunning) {
-            printMenu();
-            userChoice = readMenuChoice(input);
-
-            switch (userChoice) {
-                case BATTLE:
-                    if (fileOut != null) {
-                        game.play(input, fileOut);
-                    }
-                    else {
-                        System.out.println("Output file not available");
-                    }
-                    break;
-                case QUIT:
-                    System.out.println("\nExiting battle application. Goodbye!");
-                    keepRunning = false;
-                    break;
-                default:
-                    System.out.println("Invalid menu selection. Please try again.");
-            }
-        }
-
-        if (fileOut != null) {
-            fileOut.close();
-        }
-        input.close();
+final class Constants {
+    private Constants() {
     }
 
-    public static String findFile(String fileName) {
-        File inSrcFolder = new File("src/" + fileName);
-        String result = (inSrcFolder.exists()) ? ("src/" + fileName) : fileName;
-        return result;
-    }
+    public static final int MIN_STAT = 50;
+    public static final int MAX_STAT = 197;
+    public static final int STAT_RANGE = MAX_STAT - MIN_STAT + 1;
+    public static final int MAX_ARMY_SIZE = 12;
+    public static final int MAX_BATTLE_SIZE = 12;
+    public static final int MIN_ARMY_SIZE = 1;
+    public static final int MIN_VALID_SIZE = 0;
+    public static final int DEFAULT_ARMY_SIZE = 0;
+    public static final int DUMMY_VALUE = -1;
+    public static final String DEFAULT_NAME = "n/a";
+    public static final String DEFAULT_ARMY_NAME = "Unnamed";
+    public static final int BAHAMUT_BONUS_DAMAGE = 25;
+    public static final int BAHAMUT_BONUS_CHANCE = 10;
+    public static final int MACARA_BONUS_CHANCE = 20;
+    public static final int PERCENT_ROLL = 100;
+    public static final int MACARA_MULTIPLIER = 2;
+    public static final String ARMY1_NAME = "Army 1";
+    public static final String ARMY2_NAME = "Army 2";
 
-    private static void printMenu() {
-        System.out.println("\n=== ARMIES BATTLE ARENA ===");
-        System.out.println("1. Battle");
-        System.out.println("2. Quit");
-        System.out.print("Enter choice: ");
-    }
-
-    private static MenuOptions readMenuChoice(Scanner input) {
-        int choice = Constants.DUMMY_VALUE;
-        if (input.hasNextInt()) {
-            choice = input.nextInt();
-        }
-        input.nextLine();
-
-        switch (choice) {
-            case 1:
-                return MenuOptions.BATTLE;
-            case 2:
-                return MenuOptions.QUIT;
-            default:
-                return MenuOptions.INVALID;
-        }
-    }
-}
-
-interface Constants {
-    int MIN_STAT = 50;
-    int MAX_STAT = 197;
-    int STAT_RANGE = MAX_STAT - MIN_STAT + 1;
-    int MAX_ARMY_SIZE = 15;
-    int MAX_BATTLE_SIZE = 15;
-    int MIN_ARMY_SIZE = 1;
-    int DEFAULT_ARMY_SIZE = 0;
-    int DUMMY_VALUE = -1;
-    String DEFAULT_NAME = "n/a";
-    String DEFAULT_ARMY_NAME = "Unnamed";
-    int BAHAMUT_BONUS_DAMAGE = 25;
-    int BAHAMUT_BONUS_CHANCE = 10;
-    int PERCENT_ROLL = 100;
-    int MACARA_ROLL = 5;
-    int MACARA_MULTIPLIER = 2;
-    String ARMY1_NAME = "Army 1";
-    String ARMY2_NAME = "Army 2";
+    public static final String[] DEFAULT_NAMES = {
+            "Theron", "Thorfin", "Petra", "Karan", "Seren", "Lunara",
+            "Lagnar", "Orrin", "Quillon", "Morwen", "Nyx", "Chester",
+            "Ragnar", "Kaelith", "Cookie", "Aldric", "Grisha", "Isolde",
+            "Scrandal", "Dorian", "Hollis", "Faelan", "Clamar", "Cassia"
+    };
 }
 
 enum CreatureType {
-    BAHAMUT(1, "bahamut"),
-    MACARA(2, "macara"),
-    CYBERBAHAMUT(3, "cyberbahamut"),
-    SUPERBAHAMUT(4, "superbahamut");
+    BAHAMUT("bahamut"),
+    MACARA("macara"),
+    CYBERBAHAMUT("cyberbahamut"),
+    SUPERBAHAMUT("superbahamut");
 
-    private final int value;
     private final String description;
 
-    CreatureType(int newValue, String newDescription) {
-        value = newValue;
+    CreatureType(String newDescription) {
         description = newDescription;
-    }
-
-    public int getValue() {
-        return value;
     }
 
     public String getDescription() {
@@ -130,14 +52,14 @@ enum CreatureType {
     }
 }
 
-abstract class Creature implements Constants {
-    protected String name = DEFAULT_NAME;
-    protected int health = MIN_STAT;
-    protected int strength = MIN_STAT;
-    private static final Random rand = new Random();
+abstract class Creature {
+    protected String name = Constants.DEFAULT_NAME;
+    protected int health = Constants.MIN_STAT;
+    protected int strength = Constants.MIN_STAT;
+    protected static final Random rand = new Random();
 
     public Creature() {
-        setCreature(DEFAULT_NAME, MIN_STAT, MIN_STAT);
+        setCreature(Constants.DEFAULT_NAME, Constants.MIN_STAT, Constants.MIN_STAT);
     }
 
     public Creature(String newName, int newHealth, int newStrength) {
@@ -145,7 +67,7 @@ abstract class Creature implements Constants {
     }
 
     public void setCreature(String newName, int newHealth, int newStrength) {
-        if (newHealth < 0 || newHealth > Constants.MAX_STAT || newStrength < Constants.MIN_STAT || newStrength > Constants.MAX_STAT) {
+        if (newName == null || newHealth < 0 || newHealth > Constants.MAX_STAT || newStrength < Constants.MIN_STAT || newStrength > Constants.MAX_STAT) {
             System.out.println("\nInvalid creature data; keeping current values");
         }
         else {
@@ -195,7 +117,6 @@ abstract class Creature implements Constants {
 }
 
 class Bahamut extends Creature {
-    private static final Random rand = new Random();
 
     public Bahamut() {
         super();
@@ -206,13 +127,13 @@ class Bahamut extends Creature {
     }
 
     public String getCreatureType() {
-        return "bahamut";
+        return CreatureType.BAHAMUT.getDescription();
     }
 
     public int getDamage() {
         int damage = super.getDamage();
-        if (rand.nextInt(PERCENT_ROLL) < BAHAMUT_BONUS_CHANCE) {
-            damage = damage + BAHAMUT_BONUS_DAMAGE;
+        if (rand.nextInt(Constants.PERCENT_ROLL) < Constants.BAHAMUT_BONUS_CHANCE) {
+            damage = damage + Constants.BAHAMUT_BONUS_DAMAGE;
         }
         return damage;
     }
@@ -229,7 +150,7 @@ class Cyberbahamut extends Bahamut {
     }
 
     public String getCreatureType() {
-        return "cyberbahamut";
+        return CreatureType.CYBERBAHAMUT.getDescription();
     }
 }
 
@@ -244,12 +165,15 @@ class Superbahamut extends Bahamut {
     }
 
     public String getCreatureType() {
-        return "superbahamut";
+        return CreatureType.SUPERBAHAMUT.getDescription();
+    }
+
+    public int getDamage() {
+        return super.getDamage() + super.getDamage();
     }
 }
 
 class Macara extends Creature {
-    private static final Random rand = new Random();
 
     public Macara() {
         super();
@@ -260,101 +184,115 @@ class Macara extends Creature {
     }
 
     public String getCreatureType() {
-        return "macara";
+        return CreatureType.MACARA.getDescription();
     }
 
     public int getDamage() {
         int damage = super.getDamage();
-        if (rand.nextInt(MACARA_ROLL) == 0) {
-            damage = damage * MACARA_MULTIPLIER;
+        if (rand.nextInt(Constants.PERCENT_ROLL) < Constants.MACARA_BONUS_CHANCE) {
+            damage = damage * Constants.MACARA_MULTIPLIER;
         }
         return damage;
     }
 }
 
-class Army implements Constants {
-    private String armyName = DEFAULT_ARMY_NAME;
-    private int size = DEFAULT_ARMY_SIZE;
-    private Creature[] creatures = new Creature[MAX_ARMY_SIZE];
-    private boolean[] usedNames;
+class Army {
+    private String armyName = Constants.DEFAULT_ARMY_NAME;
+    private int size = Constants.DEFAULT_ARMY_SIZE;
+    private Creature[] creatures = new Creature[Constants.MAX_ARMY_SIZE];
+    private boolean[] usedNames = new boolean[0];
     private String[] creatureNames = new String[0];
     private static final Random rand = new Random();
 
     public Army() {
-        armyName = DEFAULT_ARMY_NAME;
-        size = DEFAULT_ARMY_SIZE;
-        for (int i = 0; i < MAX_ARMY_SIZE; i++) {
-            creatures[i] = new Macara();
-        }
+        setArmy(Constants.DEFAULT_ARMY_NAME, Constants.DEFAULT_ARMY_SIZE, Constants.DEFAULT_NAMES, new boolean[Constants.DEFAULT_NAMES.length]);
     }
 
     public Army(String newArmyName) {
-        this();
-        armyName = newArmyName;
+        setArmy(newArmyName, Constants.DEFAULT_ARMY_SIZE, Constants.DEFAULT_NAMES, new boolean[Constants.DEFAULT_NAMES.length]);
     }
 
-    public void createArmy(String newArmyName, int newSize, String[] namesFromFile) {
-        if (newSize < MIN_ARMY_SIZE || newSize > MAX_BATTLE_SIZE) {
-            System.out.println("Invalid army size; keeping current values");
-            return;
+    private void setArmy(String newArmyName, int newSize, String[] namesArray, boolean[] sharedUsedNames) {
+        boolean namesMatch = namesArray != null && sharedUsedNames != null && namesArray.length == sharedUsedNames.length;
+        boolean isValid = newArmyName != null && newSize >= Constants.MIN_VALID_SIZE && newSize <= Constants.MAX_BATTLE_SIZE && namesMatch;
+
+        if (!isValid) {
+            System.out.println("Invalid army data; keeping current values");
         }
-        armyName = newArmyName;
-        size = newSize;
-        creatureNames = namesFromFile;
-        usedNames = new boolean[namesFromFile.length];
-        resetUsedNames();
-        for (int i = 0; i < size; i++) {
-            creatures[i] = createRandomCreature();
+        else {
+            armyName = newArmyName;
+            size = newSize;
+            creatureNames = namesArray;
+            usedNames = sharedUsedNames;
+            for (int i = 0; i < Constants.MAX_ARMY_SIZE; i++) {
+                if (i < size) {
+                    creatures[i] = createRandomCreature();
+                }
+                else {
+                    creatures[i] = new Macara();
+                }
+            }
         }
     }
 
-    private void resetUsedNames() {
-        for (int i = 0; i < usedNames.length; i++) {
-            usedNames[i] = false;
-        }
+    public void createArmy(String newArmyName, int newSize, String[] namesArray, boolean[] sharedUsedNames) {
+        setArmy(newArmyName, newSize, namesArray, sharedUsedNames);
     }
 
     private Creature createRandomCreature() {
-        int creatureType = rand.nextInt(4);
-        String uniqueName = getUniqueName();
-        int health = MIN_STAT + rand.nextInt(STAT_RANGE);
-        int strength = MIN_STAT + rand.nextInt(STAT_RANGE);
+        Creature result = null;
+        CreatureType[] types = CreatureType.values();
+        CreatureType randomType = types[rand.nextInt(types.length)];
 
-        switch (creatureType) {
-            case 0:
-                return new Bahamut(uniqueName, health, strength);
-            case 1:
-                return new Cyberbahamut(uniqueName, health, strength);
-            case 2:
-                return new Superbahamut(uniqueName, health, strength);
-            case 3:
-                return new Macara(uniqueName, health, strength);
-            default:
-                return new Macara(uniqueName, health, strength);
+        String uniqueName = getUniqueName();
+        int health = Constants.MIN_STAT + rand.nextInt(Constants.STAT_RANGE);
+        int strength = Constants.MIN_STAT + rand.nextInt(Constants.STAT_RANGE);
+
+        switch (randomType) {
+            case BAHAMUT:
+                result = new Bahamut(uniqueName, health, strength);
+                break;
+            case CYBERBAHAMUT:
+                result = new Cyberbahamut(uniqueName, health, strength);
+                break;
+            case SUPERBAHAMUT:
+                result = new Superbahamut(uniqueName, health, strength);
+                break;
+            case MACARA:
+                result = new Macara(uniqueName, health, strength);
+                break;
         }
+
+        return result;
     }
 
     private boolean areAllNamesUsed() {
-        for (boolean used : usedNames) {
-            if (!used) {
-                return false;
+        boolean allUsed = true;
+        for (int i = 0; i < usedNames.length && allUsed; i++) {
+            if (!usedNames[i]) {
+                allUsed = false;
             }
         }
-        return true;
+        return allUsed;
     }
 
     private String getUniqueName() {
+        String resultName;
+
         if (creatureNames.length == 0 || areAllNamesUsed()) {
-            return "Warrior_" + (rand.nextInt(1000) + 1);
+            resultName = "Warrior_" + (rand.nextInt(1000) + 1);
+        }
+        else {
+            int startPos = rand.nextInt(creatureNames.length);
+            int index = startPos;
+            while (usedNames[index]) {
+                index = (index + 1) % creatureNames.length;
+            }
+            usedNames[index] = true;
+            resultName = creatureNames[index];
         }
 
-        int index;
-        do {
-            index = rand.nextInt(creatureNames.length);
-        } while (usedNames[index]);
-
-        usedNames[index] = true;
-        return creatureNames[index];
+        return resultName;
     }
 
     public Creature getCreature(int index) {
@@ -378,127 +316,89 @@ class Army implements Constants {
     }
 
     public void reset() {
-        for (int i = 0; i < MAX_ARMY_SIZE; i++) {
-            creatures[i].setCreature(DEFAULT_NAME, MIN_STAT, MIN_STAT);
-        }
-        armyName = DEFAULT_ARMY_NAME;
-        size = DEFAULT_ARMY_SIZE;
+        setArmy(Constants.DEFAULT_ARMY_NAME, Constants.DEFAULT_ARMY_SIZE, Constants.DEFAULT_NAMES, new boolean[Constants.DEFAULT_NAMES.length]);
     }
 
     public void printStats(String label) {
-        System.out.println("\n" + armyName + " Stats " + label);
-        System.out.println(String.format("%-15s %-20s %10s %10s", "Creature", "Type", "Strength", "Health"));
+        String header = "\n" + armyName + " Stats " + label + "\n" + String.format("%-15s %-20s %10s %10s", "Creature", "Type", "Strength", "Health");
+        System.out.println(header);
+
         for (int i = 0; i < size; i++) {
             System.out.println(creatures[i].toString());
         }
-        System.out.println("Total health of " + armyName + ": " + getTotalHealth());
-    }
 
-    public void printStats(PrintWriter fileOut, String label) {
-        String header = "\n" + armyName + " Stats " + label;
-        String columnHeader = String.format("%-15s %-20s %10s %10s", "Creature", "Type", "Strength", "Health");
-        System.out.println(header);
-        System.out.println(columnHeader);
-        if (fileOut != null) {
-            fileOut.println(header);
-            fileOut.println(columnHeader);
-        }
-        for (int i = 0; i < size; i++) {
-            String line = creatures[i].toString();
-            System.out.println(line);
-            if (fileOut != null) {
-                fileOut.println(line);
-            }
-        }
-        String totalLine = "Total health of " + armyName + ": " + getTotalHealth();
-        System.out.println(totalLine);
-        if (fileOut != null) {
-            fileOut.println(totalLine);
-        }
+        System.out.println("Total health of " + armyName + ": " + getTotalHealth());
     }
 }
 
-class Game implements Constants {
-    private Army army1 = new Army(ARMY1_NAME);
-    private Army army2 = new Army(ARMY2_NAME);
+class Game {
+    private Army army1 = new Army(Constants.ARMY1_NAME);
+    private Army army2 = new Army(Constants.ARMY2_NAME);
     private Random rand = new Random();
 
-    public void play(Scanner input, PrintWriter fileOut) {
-        String[] army1Names = readNamesFromFile(Main.ARMY1_FILE);
-        String[] army2Names = readNamesFromFile(Main.ARMY2_FILE);
-
+    public void play(Scanner input) {
         int armySize = askArmySize(input);
-        army1.createArmy(ARMY1_NAME, armySize, army1Names);
-        army2.createArmy(ARMY2_NAME, armySize, army2Names);
+        boolean[] sharedUsedNames = new boolean[Constants.DEFAULT_NAMES.length];
 
-        writeLine(fileOut, "\n########## NEW BATTLE ##########");
-        army1.printStats(fileOut, "before the Battle");
-        army2.printStats(fileOut, "before the Battle");
+        army1.createArmy(Constants.ARMY1_NAME, armySize, Constants.DEFAULT_NAMES, sharedUsedNames);
+        army2.createArmy(Constants.ARMY2_NAME, armySize, Constants.DEFAULT_NAMES, sharedUsedNames);
 
-        writeLine(fileOut, "\n" + String.format("%-25s %8s  %-8s %-25s %18s  %-8s", "Attacker", "Damage", "Army", "Defender", "Defender's Health", "Army"));
+        System.out.println("\n########## NEW BATTLE ##########");
+        army1.printStats("before the Battle");
+        army2.printStats("before the Battle");
+
+        System.out.println("\n" + String.format("%-25s %8s  %-8s %-25s %18s  %-8s", "Attacker", "Damage", "Army", "Defender", "Defender's Health", "Army"));
 
         int pairIndex = 0;
         while (pairIndex < army1.getSize() && pairIndex < army2.getSize()) {
-            runDuel(army1.getCreature(pairIndex), army2.getCreature(pairIndex), fileOut, pairIndex + 1);
+            runDuel(army1.getCreature(pairIndex), army2.getCreature(pairIndex), pairIndex + 1);
             pairIndex++;
         }
 
-        army1.printStats(fileOut, "after the Battle");
-        army2.printStats(fileOut, "after the Battle");
-        announceWinner(fileOut);
+        army1.printStats("after the Battle");
+        army2.printStats("after the Battle");
+        announceWinner();
 
         army1.reset();
         army2.reset();
     }
 
-    private void writeLine(PrintWriter fileOut, String line) {
-        System.out.println(line);
-        if (fileOut != null) {
-            fileOut.println(line);
-        }
-    }
-
     private int askArmySize(Scanner input) {
-        int size = DUMMY_VALUE;
-        while (size < MIN_ARMY_SIZE || size > MAX_BATTLE_SIZE) {
-            System.out.print("\nHow many creatures per army (1-15)? ");
+        int size = Constants.DUMMY_VALUE;
+        while (size < Constants.MIN_ARMY_SIZE || size > Constants.MAX_BATTLE_SIZE) {
+            System.out.print("\nHow many creatures per army (" + Constants.MIN_ARMY_SIZE + "-" + Constants.MAX_BATTLE_SIZE + ")? ");
             if (input.hasNextInt()) {
                 size = input.nextInt();
             }
             else {
                 input.nextLine();
-                size = DUMMY_VALUE;
+                size = Constants.DUMMY_VALUE;
             }
-            if (size < MIN_ARMY_SIZE || size > MAX_BATTLE_SIZE) {
-                System.out.println("Invalid input. Please enter a number between 1 and 15.");
+            if (size < Constants.MIN_ARMY_SIZE || size > Constants.MAX_BATTLE_SIZE) {
+                System.out.println("Invalid input. Please enter a number between " + Constants.MIN_ARMY_SIZE + " and " + Constants.MAX_BATTLE_SIZE + ".");
             }
         }
         input.nextLine();
         return size;
     }
 
-    private void runDuel(Creature creature1, Creature creature2, PrintWriter fileOut, int duelNumber) {
+    private void runDuel(Creature creature1, Creature creature2, int duelNumber) {
         Creature attacker = creature1;
         Creature defender = creature2;
-        String attackerArmy = ARMY1_NAME;
-        String defenderArmy = ARMY2_NAME;
+        String attackerArmy = Constants.ARMY1_NAME;
+        String defenderArmy = Constants.ARMY2_NAME;
 
         if (rand.nextInt(2) == 1) {
             attacker = creature2;
             defender = creature1;
-            attackerArmy = ARMY2_NAME;
-            defenderArmy = ARMY1_NAME;
+            attackerArmy = Constants.ARMY2_NAME;
+            defenderArmy = Constants.ARMY1_NAME;
         }
 
-        writeLine(fileOut, "\n--- Duel #" + duelNumber + ": " + creature1.getName() + " (" + ARMY1_NAME + ") vs " + creature2.getName() + " (" + ARMY2_NAME + ") ---");
-        writeLine(fileOut, attacker.getName() + " attacks first!");
+        System.out.println("\n--- Duel #" + duelNumber + ": " + creature1.getName() + " (" + Constants.ARMY1_NAME + ") vs " + creature2.getName() + " (" + Constants.ARMY2_NAME + ") ---\n" + attacker.getName() + " attacks first!");
 
         while (creature1.getHealth() > 0 && creature2.getHealth() > 0) {
-            performStrike(attacker, attackerArmy, defender, defenderArmy, fileOut);
-
-            if (attacker instanceof Superbahamut && defender.getHealth() > 0) {
-                performStrike(attacker, attackerArmy, defender, defenderArmy, fileOut);
-            }
+            performStrike(attacker, attackerArmy, defender, defenderArmy);
 
             Creature tempCreature = attacker;
             attacker = defender;
@@ -508,12 +408,13 @@ class Game implements Constants {
             defenderArmy = tempArmy;
         }
 
-        Creature winner = (creature1.getHealth() > 0) ? creature1 : creature2;
-        Creature loser = (creature1.getHealth() > 0) ? creature2 : creature1;
-        writeLine(fileOut, ">> " + winner.getName() + " defeated " + loser.getName() + "!");
+        boolean c1Alive = creature1.getHealth() > 0;
+        Creature winner = c1Alive ? creature1 : creature2;
+        Creature loser = c1Alive ? creature2 : creature1;
+        System.out.println(">> " + winner.getName() + " defeated " + loser.getName() + "!");
     }
 
-    private void performStrike(Creature attacker, String attackerArmy, Creature defender, String defenderArmy, PrintWriter fileOut) {
+    private void performStrike(Creature attacker, String attackerArmy, Creature defender, String defenderArmy) {
         int damage = attacker.getDamage();
         int newHealth = defender.getHealth() - damage;
         if (newHealth < 0) {
@@ -521,335 +422,276 @@ class Game implements Constants {
         }
         defender.setHealth(newHealth);
 
-        writeLine(fileOut, String.format("%-25s %8d  %-8s %-25s %18d  %-8s", attacker.getName(), damage, attackerArmy, defender.getName(), defender.getHealth(), defenderArmy));
+        System.out.println(String.format("%-25s %8d  %-8s %-25s %18d  %-8s", attacker.getName(), damage, attackerArmy, defender.getName(), defender.getHealth(), defenderArmy));
     }
 
-    private String[] readNamesFromFile(String fileName) {
-        String[] temp = new String[24];
-        int count = 0;
-        try {
-            String filePath = Main.findFile(fileName);
-            Scanner fileIn = new Scanner(new File(filePath));
-            while (fileIn.hasNextLine() && count < 24) {
-                String line = fileIn.nextLine().trim();
-                if (!line.isEmpty()) {
-                    temp[count] = line;
-                    count++;
-                }
-            }
-            fileIn.close();
-        }
-        catch (java.io.FileNotFoundException error) {
-            System.out.println("File " + fileName + " not found");
-        }
-
-        String[] names = new String[count];
-        System.arraycopy(temp, 0, names, 0, count);
-        return names;
-    }
-
-    private void announceWinner(PrintWriter fileOut) {
+    private void announceWinner() {
         int total1 = army1.getTotalHealth();
         int total2 = army2.getTotalHealth();
         String resultMessage;
 
         if (total1 > total2) {
-            resultMessage = ">>> " + ARMY1_NAME + " wins the battle! <<<";
+            resultMessage = ">>> " + Constants.ARMY1_NAME + " wins the battle! <<<";
         }
         else if (total2 > total1) {
-            resultMessage = ">>> " + ARMY2_NAME + " wins the battle! <<<";
+            resultMessage = ">>> " + Constants.ARMY2_NAME + " wins the battle! <<<";
         }
         else {
             resultMessage = ">>> The battle ends in a tie! <<<";
         }
 
-        writeLine(fileOut, "\n" + resultMessage);
-        writeLine(fileOut, ARMY1_NAME + " overall health: " + total1);
-        writeLine(fileOut, ARMY2_NAME + " overall health: " + total2);
+        System.out.println("\n" + resultMessage + "\n" + Constants.ARMY1_NAME + " overall health: " + total1 + "\n" + Constants.ARMY2_NAME + " overall health: " + total2);
+    }
+}
+
+public class Main {
+
+    enum MenuOptions {
+        INVALID,
+        BATTLE,
+        QUIT
+    }
+
+    public static void main(String[] args) {
+        Scanner input = new Scanner(System.in);
+        Game game = new Game();
+
+        MenuOptions userChoice = MenuOptions.INVALID;
+        boolean keepRunning = true;
+
+        while (keepRunning) {
+            printMenu();
+            userChoice = readMenuChoice(input);
+
+            switch (userChoice) {
+                case BATTLE:
+                    game.play(input);
+                    break;
+                case QUIT:
+                    System.out.println("\nExiting battle application. Goodbye!");
+                    keepRunning = false;
+                    break;
+                default:
+                    System.out.println("Invalid menu selection. Please try again.");
+            }
+        }
+
+        input.close();
+    }
+
+    private static void printMenu() {
+        System.out.print("\n=== ARMIES BATTLE ARENA ===\n1. Battle\n2. Quit\nEnter choice: ");
+    }
+
+    private static MenuOptions readMenuChoice(Scanner input) {
+        MenuOptions result = MenuOptions.INVALID;
+        int choice = Constants.DUMMY_VALUE;
+
+        if (input.hasNextInt()) {
+            choice = input.nextInt();
+        }
+        input.nextLine();
+
+        switch (choice) {
+            case 1:
+                result = MenuOptions.BATTLE;
+                break;
+            case 2:
+                result = MenuOptions.QUIT;
+                break;
+            default:
+                result = MenuOptions.INVALID;
+        }
+
+        return result;
     }
 }
 
 /*Output
-/Library/Java/JavaVirtualMachines/jdk-26.jdk/Contents/Home/bin/java -javaagent:/Applications/IntelliJ IDEA.app/Contents/lib/idea_rt.jar=49560 -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -classpath /Users/aidentsang/IdeaProjects/CS213_L6_AT/out/production/CS213_L6_AT Main
+Library/Java/JavaVirtualMachines/jdk-26.jdk/Contents/Home/bin/java -javaagent:/Applications/IntelliJ IDEA.app/Contents/lib/idea_rt.jar=64149 -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -classpath /Users/aidentsang/IdeaProjects/CS213_L6_AT/out/production/CS213_L6_AT Main
+
+=== ARMIES BATTLE ARENA ===
+1. Battle
+2. Quit
+Enter choice: 3
+Invalid menu selection. Please try again.
+
+=== ARMIES BATTLE ARENA ===
+1. Battle
+2. Quit
+Enter choice: !
+Invalid menu selection. Please try again.
+
+=== ARMIES BATTLE ARENA ===
+1. Battle
+2. Quit
+Enter choice: a
+Invalid menu selection. Please try again.
 
 === ARMIES BATTLE ARENA ===
 1. Battle
 2. Quit
 Enter choice: 1
 
-How many creatures per army (1-15)? 15
+How many creatures per army (1-12)? -1
+Invalid input. Please enter a number between 1 and 12.
+
+How many creatures per army (1-12)? 13
+Invalid input. Please enter a number between 1 and 12.
+
+How many creatures per army (1-12)? !a
+Invalid input. Please enter a number between 1 and 12.
+
+How many creatures per army (1-12)? Invalid input. Please enter a number between 1 and 12.
+
+How many creatures per army (1-12)? 12
 
 ########## NEW BATTLE ##########
 
 Army 1 Stats before the Battle
 Creature        Type                   Strength     Health
-Theron          superbahamut                 65         90
-Thorfin         cyberbahamut                114        125
-Petra           bahamut                      96        193
-Karan           superbahamut                186        179
-Seren           macara                      141        165
-Lunara          superbahamut                 69        148
-Lagnar          cyberbahamut                189        154
-Orrin           cyberbahamut                169         81
-Quillon         bahamut                     170        136
-Morwen          bahamut                     168         61
-Nyx             superbahamut                146        163
-Chester         bahamut                     125        175
-Ragnar          bahamut                     192        138
-Kaelith         superbahamut                 76         50
-Cookie          cyberbahamut                 56        193
-Total health of Army 1: 2051
+Chester         macara                      170        173
+Morwen          macara                       68         60
+Cookie          superbahamut                175        124
+Aldric          macara                      155        108
+Orrin           superbahamut                 86         69
+Seren           macara                      102        184
+Grisha          cyberbahamut                 97        178
+Quillon         superbahamut                177         65
+Clamar          cyberbahamut                 82        113
+Ragnar          cyberbahamut                147        129
+Nyx             bahamut                      73         83
+Isolde          bahamut                     104        122
+Total health of Army 1: 1408
 
 Army 2 Stats before the Battle
 Creature        Type                   Strength     Health
-Aldric          cyberbahamut                148         79
-Grisha          bahamut                     155        169
-Isolde          bahamut                      63        104
-Scrandal        macara                       84         72
-Dorian          macara                      183        185
-Hollis          cyberbahamut                122         56
-Faelan          superbahamut                173         51
-Clamar          superbahamut                 77        117
-Cassia          macara                       70         51
-Jorvik          bahamut                     184        137
-Angel           superbahamut                190        123
-Elowen          bahamut                     185        154
-Brynn           bahamut                     196         57
-Roshar          bahamut                     188        148
-Froster         macara                      114        112
-Total health of Army 2: 1615
+Petra           superbahamut                157        175
+Lunara          superbahamut                 89         52
+Karan           superbahamut                147        178
+Kaelith         superbahamut                 69        117
+Lagnar          cyberbahamut                165        154
+Dorian          superbahamut                127        128
+Scrandal        macara                       60         64
+Theron          superbahamut                 61        192
+Hollis          superbahamut                122        192
+Faelan          superbahamut                102        165
+Cassia          cyberbahamut                143        153
+Thorfin         cyberbahamut                116        103
+Total health of Army 2: 1673
 
-Attacker                    Damage  Army     Defender                   Defender's Health  Army
+Attacker                    Damage  Army     Defender                   Defender's Health  Army    
 
---- Duel #1: Theron the superbahamut (Army 1) vs Aldric the cyberbahamut (Army 2) ---
-Aldric the cyberbahamut attacks first!
-Aldric the cyberbahamut         60  Army 2   Theron the superbahamut                   30  Army 1
-Theron the superbahamut         16  Army 1   Aldric the cyberbahamut                   63  Army 2
-Theron the superbahamut         50  Army 1   Aldric the cyberbahamut                   13  Army 2
-Aldric the cyberbahamut        131  Army 2   Theron the superbahamut                    0  Army 1
->> Aldric the cyberbahamut defeated Theron the superbahamut!
+--- Duel #1: Chester the macara (Army 1) vs Petra the superbahamut (Army 2) ---
+Chester the macara attacks first!
+Chester the macara              46  Army 1   Petra the superbahamut                   129  Army 2  
+Petra the superbahamut         144  Army 2   Chester the macara                        29  Army 1  
+Chester the macara             136  Army 1   Petra the superbahamut                     0  Army 2  
+>> Chester the macara defeated Petra the superbahamut!
 
---- Duel #2: Thorfin the cyberbahamut (Army 1) vs Grisha the bahamut (Army 2) ---
-Grisha the bahamut attacks first!
-Grisha the bahamut              56  Army 2   Thorfin the cyberbahamut                  69  Army 1
-Thorfin the cyberbahamut        47  Army 1   Grisha the bahamut                       122  Army 2
-Grisha the bahamut              37  Army 2   Thorfin the cyberbahamut                  32  Army 1
-Thorfin the cyberbahamut        54  Army 1   Grisha the bahamut                        68  Army 2
-Grisha the bahamut             152  Army 2   Thorfin the cyberbahamut                   0  Army 1
->> Grisha the bahamut defeated Thorfin the cyberbahamut!
-
---- Duel #3: Petra the bahamut (Army 1) vs Isolde the bahamut (Army 2) ---
-Isolde the bahamut attacks first!
-Isolde the bahamut               6  Army 2   Petra the bahamut                        187  Army 1
-Petra the bahamut               41  Army 1   Isolde the bahamut                        63  Army 2
-Isolde the bahamut              48  Army 2   Petra the bahamut                        139  Army 1
-Petra the bahamut               55  Army 1   Isolde the bahamut                         8  Army 2
-Isolde the bahamut              21  Army 2   Petra the bahamut                        118  Army 1
-Petra the bahamut               76  Army 1   Isolde the bahamut                         0  Army 2
->> Petra the bahamut defeated Isolde the bahamut!
-
---- Duel #4: Karan the superbahamut (Army 1) vs Scrandal the macara (Army 2) ---
-Scrandal the macara attacks first!
-Scrandal the macara             71  Army 2   Karan the superbahamut                   108  Army 1
-Karan the superbahamut          58  Army 1   Scrandal the macara                       14  Army 2
-Karan the superbahamut         156  Army 1   Scrandal the macara                        0  Army 2
->> Karan the superbahamut defeated Scrandal the macara!
-
---- Duel #5: Seren the macara (Army 1) vs Dorian the macara (Army 2) ---
-Seren the macara attacks first!
-Seren the macara                99  Army 1   Dorian the macara                         86  Army 2
-Dorian the macara              204  Army 2   Seren the macara                           0  Army 1
->> Dorian the macara defeated Seren the macara!
-
---- Duel #6: Lunara the superbahamut (Army 1) vs Hollis the cyberbahamut (Army 2) ---
+--- Duel #2: Morwen the macara (Army 1) vs Lunara the superbahamut (Army 2) ---
 Lunara the superbahamut attacks first!
-Lunara the superbahamut         27  Army 1   Hollis the cyberbahamut                   29  Army 2
-Lunara the superbahamut         70  Army 1   Hollis the cyberbahamut                    0  Army 2
->> Lunara the superbahamut defeated Hollis the cyberbahamut!
+Lunara the superbahamut         60  Army 2   Morwen the macara                          0  Army 1  
+>> Lunara the superbahamut defeated Morwen the macara!
 
---- Duel #7: Lagnar the cyberbahamut (Army 1) vs Faelan the superbahamut (Army 2) ---
-Lagnar the cyberbahamut attacks first!
-Lagnar the cyberbahamut        118  Army 1   Faelan the superbahamut                    0  Army 2
->> Lagnar the cyberbahamut defeated Faelan the superbahamut!
-
---- Duel #8: Orrin the cyberbahamut (Army 1) vs Clamar the superbahamut (Army 2) ---
-Orrin the cyberbahamut attacks first!
-Orrin the cyberbahamut          51  Army 1   Clamar the superbahamut                   66  Army 2
-Clamar the superbahamut         15  Army 2   Orrin the cyberbahamut                    66  Army 1
-Clamar the superbahamut         42  Army 2   Orrin the cyberbahamut                    24  Army 1
-Orrin the cyberbahamut         120  Army 1   Clamar the superbahamut                    0  Army 2
->> Orrin the cyberbahamut defeated Clamar the superbahamut!
-
---- Duel #9: Quillon the bahamut (Army 1) vs Cassia the macara (Army 2) ---
-Quillon the bahamut attacks first!
-Quillon the bahamut             87  Army 1   Cassia the macara                          0  Army 2
->> Quillon the bahamut defeated Cassia the macara!
-
---- Duel #10: Morwen the bahamut (Army 1) vs Jorvik the bahamut (Army 2) ---
-Morwen the bahamut attacks first!
-Morwen the bahamut             157  Army 1   Jorvik the bahamut                         0  Army 2
->> Morwen the bahamut defeated Jorvik the bahamut!
-
---- Duel #11: Nyx the superbahamut (Army 1) vs Angel the superbahamut (Army 2) ---
-Angel the superbahamut attacks first!
-Angel the superbahamut           5  Army 2   Nyx the superbahamut                     158  Army 1
-Angel the superbahamut         141  Army 2   Nyx the superbahamut                      17  Army 1
-Nyx the superbahamut           130  Army 1   Angel the superbahamut                     0  Army 2
->> Nyx the superbahamut defeated Angel the superbahamut!
-
---- Duel #12: Chester the bahamut (Army 1) vs Elowen the bahamut (Army 2) ---
-Elowen the bahamut attacks first!
-Elowen the bahamut              79  Army 2   Chester the bahamut                       96  Army 1
-Chester the bahamut             92  Army 1   Elowen the bahamut                        62  Army 2
-Elowen the bahamut             158  Army 2   Chester the bahamut                        0  Army 1
->> Elowen the bahamut defeated Chester the bahamut!
-
---- Duel #13: Ragnar the bahamut (Army 1) vs Brynn the bahamut (Army 2) ---
-Ragnar the bahamut attacks first!
-Ragnar the bahamut             154  Army 1   Brynn the bahamut                          0  Army 2
->> Ragnar the bahamut defeated Brynn the bahamut!
-
---- Duel #14: Kaelith the superbahamut (Army 1) vs Roshar the bahamut (Army 2) ---
-Kaelith the superbahamut attacks first!
-Kaelith the superbahamut        30  Army 1   Roshar the bahamut                       118  Army 2
-Kaelith the superbahamut        18  Army 1   Roshar the bahamut                       100  Army 2
-Roshar the bahamut             100  Army 2   Kaelith the superbahamut                   0  Army 1
->> Roshar the bahamut defeated Kaelith the superbahamut!
-
---- Duel #15: Cookie the cyberbahamut (Army 1) vs Froster the macara (Army 2) ---
-Cookie the cyberbahamut attacks first!
-Cookie the cyberbahamut          7  Army 1   Froster the macara                       105  Army 2
-Froster the macara              63  Army 2   Cookie the cyberbahamut                  130  Army 1
-Cookie the cyberbahamut         13  Army 1   Froster the macara                        92  Army 2
-Froster the macara              54  Army 2   Cookie the cyberbahamut                   76  Army 1
-Cookie the cyberbahamut         10  Army 1   Froster the macara                        82  Army 2
-Froster the macara              43  Army 2   Cookie the cyberbahamut                   33  Army 1
-Cookie the cyberbahamut         10  Army 1   Froster the macara                        72  Army 2
-Froster the macara              55  Army 2   Cookie the cyberbahamut                    0  Army 1
->> Froster the macara defeated Cookie the cyberbahamut!
-
-Army 1 Stats after the Battle
-Creature        Type                   Strength     Health
-Theron          superbahamut                 65          0
-Thorfin         cyberbahamut                114          0
-Petra           bahamut                      96        118
-Karan           superbahamut                186        108
-Seren           macara                      141          0
-Lunara          superbahamut                 69        148
-Lagnar          cyberbahamut                189        154
-Orrin           cyberbahamut                169         24
-Quillon         bahamut                     170        136
-Morwen          bahamut                     168         61
-Nyx             superbahamut                146         17
-Chester         bahamut                     125          0
-Ragnar          bahamut                     192        138
-Kaelith         superbahamut                 76          0
-Cookie          cyberbahamut                 56          0
-Total health of Army 1: 904
-
-Army 2 Stats after the Battle
-Creature        Type                   Strength     Health
-Aldric          cyberbahamut                148         13
-Grisha          bahamut                     155         68
-Isolde          bahamut                      63          0
-Scrandal        macara                       84          0
-Dorian          macara                      183         86
-Hollis          cyberbahamut                122          0
-Faelan          superbahamut                173          0
-Clamar          superbahamut                 77          0
-Cassia          macara                       70          0
-Jorvik          bahamut                     184          0
-Angel           superbahamut                190          0
-Elowen          bahamut                     185         62
-Brynn           bahamut                     196          0
-Roshar          bahamut                     188        100
-Froster         macara                      114         72
-Total health of Army 2: 401
-
->>> Army 1 wins the battle! <<<
-Army 1 overall health: 904
-Army 2 overall health: 401
-
-=== ARMIES BATTLE ARENA ===
-1. Battle
-2. Quit
-Enter choice: -1
-Invalid menu selection. Please try again.
-
-=== ARMIES BATTLE ARENA ===
-1. Battle
-2. Quit
-Enter choice: !a
-Invalid menu selection. Please try again.
-
-=== ARMIES BATTLE ARENA ===
-1. Battle
-2. Quit
-Enter choice: 1
-
-How many creatures per army (1-15)? -1
-Invalid input. Please enter a number between 1 and 15.
-
-How many creatures per army (1-15)? !a
-Invalid input. Please enter a number between 1 and 15.
-
-How many creatures per army (1-15)? Invalid input. Please enter a number between 1 and 15.
-
-How many creatures per army (1-15)? 3
-
-########## NEW BATTLE ##########
-
-Army 1 Stats before the Battle
-Creature        Type                   Strength     Health
-Lagnar          macara                      102        165
-Cookie          superbahamut                125         65
-Nyx             bahamut                     133        122
-Total health of Army 1: 352
-
-Army 2 Stats before the Battle
-Creature        Type                   Strength     Health
-Angel           superbahamut                 56         95
-Cassia          cyberbahamut                 90        172
-Elowen          cyberbahamut                137        117
-Total health of Army 2: 384
-
-Attacker                    Damage  Army     Defender                   Defender's Health  Army
-
---- Duel #1: Lagnar the macara (Army 1) vs Angel the superbahamut (Army 2) ---
-Lagnar the macara attacks first!
-Lagnar the macara              140  Army 1   Angel the superbahamut                     0  Army 2
->> Lagnar the macara defeated Angel the superbahamut!
-
---- Duel #2: Cookie the superbahamut (Army 1) vs Cassia the cyberbahamut (Army 2) ---
+--- Duel #3: Cookie the superbahamut (Army 1) vs Karan the superbahamut (Army 2) ---
 Cookie the superbahamut attacks first!
-Cookie the superbahamut        125  Army 1   Cassia the cyberbahamut                   47  Army 2
-Cookie the superbahamut         96  Army 1   Cassia the cyberbahamut                    0  Army 2
->> Cookie the superbahamut defeated Cassia the cyberbahamut!
+Cookie the superbahamut        286  Army 1   Karan the superbahamut                     0  Army 2  
+>> Cookie the superbahamut defeated Karan the superbahamut!
 
---- Duel #3: Nyx the bahamut (Army 1) vs Elowen the cyberbahamut (Army 2) ---
-Elowen the cyberbahamut attacks first!
-Elowen the cyberbahamut        114  Army 2   Nyx the bahamut                            8  Army 1
-Nyx the bahamut                 13  Army 1   Elowen the cyberbahamut                  104  Army 2
-Elowen the cyberbahamut         66  Army 2   Nyx the bahamut                            0  Army 1
->> Elowen the cyberbahamut defeated Nyx the bahamut!
+--- Duel #4: Aldric the macara (Army 1) vs Kaelith the superbahamut (Army 2) ---
+Kaelith the superbahamut attacks first!
+Kaelith the superbahamut        29  Army 2   Aldric the macara                         79  Army 1  
+Aldric the macara              298  Army 1   Kaelith the superbahamut                   0  Army 2  
+>> Aldric the macara defeated Kaelith the superbahamut!
+
+--- Duel #5: Orrin the superbahamut (Army 1) vs Lagnar the cyberbahamut (Army 2) ---
+Lagnar the cyberbahamut attacks first!
+Lagnar the cyberbahamut        162  Army 2   Orrin the superbahamut                     0  Army 1  
+>> Lagnar the cyberbahamut defeated Orrin the superbahamut!
+
+--- Duel #6: Seren the macara (Army 1) vs Dorian the superbahamut (Army 2) ---
+Dorian the superbahamut attacks first!
+Dorian the superbahamut        161  Army 2   Seren the macara                          23  Army 1  
+Seren the macara                78  Army 1   Dorian the superbahamut                   50  Army 2  
+Dorian the superbahamut         71  Army 2   Seren the macara                           0  Army 1  
+>> Dorian the superbahamut defeated Seren the macara!
+
+--- Duel #7: Grisha the cyberbahamut (Army 1) vs Scrandal the macara (Army 2) ---
+Grisha the cyberbahamut attacks first!
+Grisha the cyberbahamut         32  Army 1   Scrandal the macara                       32  Army 2  
+Scrandal the macara             12  Army 2   Grisha the cyberbahamut                  166  Army 1  
+Grisha the cyberbahamut         79  Army 1   Scrandal the macara                        0  Army 2  
+>> Grisha the cyberbahamut defeated Scrandal the macara!
+
+--- Duel #8: Quillon the superbahamut (Army 1) vs Theron the superbahamut (Army 2) ---
+Quillon the superbahamut attacks first!
+Quillon the superbahamut       251  Army 1   Theron the superbahamut                    0  Army 2  
+>> Quillon the superbahamut defeated Theron the superbahamut!
+
+--- Duel #9: Clamar the cyberbahamut (Army 1) vs Hollis the superbahamut (Army 2) ---
+Hollis the superbahamut attacks first!
+Hollis the superbahamut        221  Army 2   Clamar the cyberbahamut                    0  Army 1  
+>> Hollis the superbahamut defeated Clamar the cyberbahamut!
+
+--- Duel #10: Ragnar the cyberbahamut (Army 1) vs Faelan the superbahamut (Army 2) ---
+Ragnar the cyberbahamut attacks first!
+Ragnar the cyberbahamut         23  Army 1   Faelan the superbahamut                  142  Army 2  
+Faelan the superbahamut         40  Army 2   Ragnar the cyberbahamut                   89  Army 1  
+Ragnar the cyberbahamut          3  Army 1   Faelan the superbahamut                  139  Army 2  
+Faelan the superbahamut        176  Army 2   Ragnar the cyberbahamut                    0  Army 1  
+>> Faelan the superbahamut defeated Ragnar the cyberbahamut!
+
+--- Duel #11: Nyx the bahamut (Army 1) vs Cassia the cyberbahamut (Army 2) ---
+Nyx the bahamut attacks first!
+Nyx the bahamut                 43  Army 1   Cassia the cyberbahamut                  110  Army 2  
+Cassia the cyberbahamut         50  Army 2   Nyx the bahamut                           33  Army 1  
+Nyx the bahamut                 36  Army 1   Cassia the cyberbahamut                   74  Army 2  
+Cassia the cyberbahamut        129  Army 2   Nyx the bahamut                            0  Army 1  
+>> Cassia the cyberbahamut defeated Nyx the bahamut!
+
+--- Duel #12: Isolde the bahamut (Army 1) vs Thorfin the cyberbahamut (Army 2) ---
+Thorfin the cyberbahamut attacks first!
+Thorfin the cyberbahamut        69  Army 2   Isolde the bahamut                        53  Army 1  
+Isolde the bahamut              35  Army 1   Thorfin the cyberbahamut                  68  Army 2  
+Thorfin the cyberbahamut        98  Army 2   Isolde the bahamut                         0  Army 1  
+>> Thorfin the cyberbahamut defeated Isolde the bahamut!
 
 Army 1 Stats after the Battle
 Creature        Type                   Strength     Health
-Lagnar          macara                      102        165
-Cookie          superbahamut                125         65
-Nyx             bahamut                     133          0
-Total health of Army 1: 230
+Chester         macara                      170         29
+Morwen          macara                       68          0
+Cookie          superbahamut                175        124
+Aldric          macara                      155         79
+Orrin           superbahamut                 86          0
+Seren           macara                      102          0
+Grisha          cyberbahamut                 97        166
+Quillon         superbahamut                177         65
+Clamar          cyberbahamut                 82          0
+Ragnar          cyberbahamut                147          0
+Nyx             bahamut                      73          0
+Isolde          bahamut                     104          0
+Total health of Army 1: 463
 
 Army 2 Stats after the Battle
 Creature        Type                   Strength     Health
-Angel           superbahamut                 56          0
-Cassia          cyberbahamut                 90          0
-Elowen          cyberbahamut                137        104
-Total health of Army 2: 104
+Petra           superbahamut                157          0
+Lunara          superbahamut                 89         52
+Karan           superbahamut                147          0
+Kaelith         superbahamut                 69          0
+Lagnar          cyberbahamut                165        154
+Dorian          superbahamut                127         50
+Scrandal        macara                       60          0
+Theron          superbahamut                 61          0
+Hollis          superbahamut                122        192
+Faelan          superbahamut                102        139
+Cassia          cyberbahamut                143         74
+Thorfin         cyberbahamut                116         68
+Total health of Army 2: 729
 
->>> Army 1 wins the battle! <<<
-Army 1 overall health: 230
-Army 2 overall health: 104
+>>> Army 2 wins the battle! <<<
+Army 1 overall health: 463
+Army 2 overall health: 729
 
 === ARMIES BATTLE ARENA ===
 1. Battle
