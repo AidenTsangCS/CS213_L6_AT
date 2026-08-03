@@ -11,17 +11,17 @@ final class Constants {
     public static final int MIN_STAT = 50;
     public static final int MAX_STAT = 197;
     public static final int STAT_RANGE = MAX_STAT - MIN_STAT + 1;
-    public static final int MAX_ARMY_SIZE = 12;
-    public static final int MAX_BATTLE_SIZE = 12;
+    public static final int MAX_ARMY_SIZE = 12;   // 24 names split evenly between 2 armies; enlarge DEFAULT_NAMES to raise this
     public static final int MIN_ARMY_SIZE = 1;
     public static final int MIN_VALID_SIZE = 0;
+    public static final int MIN_VALID_HEALTH = 0;
     public static final int DEFAULT_ARMY_SIZE = 0;
     public static final int DUMMY_VALUE = -1;
     public static final String DEFAULT_NAME = "n/a";
     public static final String DEFAULT_ARMY_NAME = "Unnamed";
     public static final int BAHAMUT_BONUS_DAMAGE = 25;
-    public static final int BAHAMUT_BONUS_CHANCE = 10;
-    public static final int MACARA_BONUS_CHANCE = 20;
+    public static final int BAHAMUT_BONUS_CHANCE = 10;   // percent out of PERCENT_ROLL
+    public static final int MACARA_BONUS_CHANCE = 20;   // percent out of PERCENT_ROLL; lab text said 20%, its sample code computed 5%
     public static final int PERCENT_ROLL = 100;
     public static final int MACARA_MULTIPLIER = 2;
     public static final String ARMY1_NAME = "Army 1";
@@ -67,7 +67,7 @@ abstract class Creature {
     }
 
     public void setCreature(String newName, int newHealth, int newStrength) {
-        if (newName == null || newHealth < 0 || newHealth > Constants.MAX_STAT || newStrength < Constants.MIN_STAT || newStrength > Constants.MAX_STAT) {
+        if (newName == null || newHealth < Constants.MIN_VALID_HEALTH || newHealth > Constants.MAX_STAT || newStrength < Constants.MIN_STAT || newStrength > Constants.MAX_STAT) {
             System.out.println("\nInvalid creature data; keeping current values");
         }
         else {
@@ -214,7 +214,7 @@ class Army {
 
     private void setArmy(String newArmyName, int newSize, String[] namesArray, boolean[] sharedUsedNames) {
         boolean namesMatch = namesArray != null && sharedUsedNames != null && namesArray.length == sharedUsedNames.length;
-        boolean isValid = newArmyName != null && newSize >= Constants.MIN_VALID_SIZE && newSize <= Constants.MAX_BATTLE_SIZE && namesMatch;
+        boolean isValid = newArmyName != null && newSize >= Constants.MIN_VALID_SIZE && newSize <= Constants.MAX_ARMY_SIZE && namesMatch;
 
         if (!isValid) {
             System.out.println("Invalid army data; keeping current values");
@@ -365,8 +365,8 @@ class Game {
 
     private int askArmySize(Scanner input) {
         int size = Constants.DUMMY_VALUE;
-        while (size < Constants.MIN_ARMY_SIZE || size > Constants.MAX_BATTLE_SIZE) {
-            System.out.print("\nHow many creatures per army (" + Constants.MIN_ARMY_SIZE + "-" + Constants.MAX_BATTLE_SIZE + ")? ");
+        while (size < Constants.MIN_ARMY_SIZE || size > Constants.MAX_ARMY_SIZE) {
+            System.out.print("\nHow many creatures per army (" + Constants.MIN_ARMY_SIZE + "-" + Constants.MAX_ARMY_SIZE + ")? ");
             if (input.hasNextInt()) {
                 size = input.nextInt();
             }
@@ -374,8 +374,8 @@ class Game {
                 input.nextLine();
                 size = Constants.DUMMY_VALUE;
             }
-            if (size < Constants.MIN_ARMY_SIZE || size > Constants.MAX_BATTLE_SIZE) {
-                System.out.println("Invalid input. Please enter a number between " + Constants.MIN_ARMY_SIZE + " and " + Constants.MAX_BATTLE_SIZE + ".");
+            if (size < Constants.MIN_ARMY_SIZE || size > Constants.MAX_ARMY_SIZE) {
+                System.out.println("Invalid input. Please enter a number between " + Constants.MIN_ARMY_SIZE + " and " + Constants.MAX_ARMY_SIZE + ".");
             }
         }
         input.nextLine();
@@ -417,8 +417,8 @@ class Game {
     private void performStrike(Creature attacker, String attackerArmy, Creature defender, String defenderArmy) {
         int damage = attacker.getDamage();
         int newHealth = defender.getHealth() - damage;
-        if (newHealth < 0) {
-            newHealth = 0;
+        if (newHealth < Constants.MIN_VALID_HEALTH) {
+            newHealth = Constants.MIN_VALID_HEALTH;
         }
         defender.setHealth(newHealth);
 
@@ -508,13 +508,7 @@ public class Main {
 }
 
 /*Output
-Library/Java/JavaVirtualMachines/jdk-26.jdk/Contents/Home/bin/java -javaagent:/Applications/IntelliJ IDEA.app/Contents/lib/idea_rt.jar=64149 -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -classpath /Users/aidentsang/IdeaProjects/CS213_L6_AT/out/production/CS213_L6_AT Main
-
-=== ARMIES BATTLE ARENA ===
-1. Battle
-2. Quit
-Enter choice: 3
-Invalid menu selection. Please try again.
+/Library/Java/JavaVirtualMachines/jdk-26.jdk/Contents/Home/bin/java -javaagent:/Applications/IntelliJ IDEA.app/Contents/lib/idea_rt.jar=52951 -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8 -classpath /Users/aidentsang/IdeaProjects/CS213_L6_AT/out/production/CS213_L6_AT Main
 
 === ARMIES BATTLE ARENA ===
 1. Battle
@@ -533,10 +527,10 @@ Invalid menu selection. Please try again.
 2. Quit
 Enter choice: 1
 
-How many creatures per army (1-12)? -1
+How many creatures per army (1-12)? 13
 Invalid input. Please enter a number between 1 and 12.
 
-How many creatures per army (1-12)? 13
+How many creatures per army (1-12)? -1
 Invalid input. Please enter a number between 1 and 12.
 
 How many creatures per army (1-12)? !a
@@ -550,148 +544,154 @@ How many creatures per army (1-12)? 12
 
 Army 1 Stats before the Battle
 Creature        Type                   Strength     Health
-Chester         macara                      170        173
-Morwen          macara                       68         60
-Cookie          superbahamut                175        124
-Aldric          macara                      155        108
-Orrin           superbahamut                 86         69
-Seren           macara                      102        184
-Grisha          cyberbahamut                 97        178
-Quillon         superbahamut                177         65
-Clamar          cyberbahamut                 82        113
-Ragnar          cyberbahamut                147        129
-Nyx             bahamut                      73         83
-Isolde          bahamut                     104        122
-Total health of Army 1: 1408
+Cassia          macara                       67         70
+Chester         superbahamut                183         97
+Hollis          bahamut                     194        162
+Karan           superbahamut                181         99
+Seren           macara                      128        165
+Kaelith         cyberbahamut                116         87
+Faelan          macara                       95        185
+Lunara          superbahamut                173        193
+Ragnar          cyberbahamut                142        195
+Lagnar          cyberbahamut                155        142
+Clamar          cyberbahamut                171        182
+Orrin           cyberbahamut                103        127
+Total health of Army 1: 1704
 
 Army 2 Stats before the Battle
 Creature        Type                   Strength     Health
-Petra           superbahamut                157        175
-Lunara          superbahamut                 89         52
-Karan           superbahamut                147        178
-Kaelith         superbahamut                 69        117
-Lagnar          cyberbahamut                165        154
-Dorian          superbahamut                127        128
-Scrandal        macara                       60         64
-Theron          superbahamut                 61        192
-Hollis          superbahamut                122        192
-Faelan          superbahamut                102        165
-Cassia          cyberbahamut                143        153
-Thorfin         cyberbahamut                116        103
-Total health of Army 2: 1673
+Theron          macara                       54         64
+Thorfin         macara                      112        162
+Petra           macara                      125         92
+Quillon         bahamut                     154         55
+Morwen          macara                      147        142
+Dorian          bahamut                     124        175
+Nyx             bahamut                      95         82
+Scrandal        superbahamut                136        132
+Cookie          superbahamut                 65         80
+Aldric          bahamut                      67        102
+Grisha          bahamut                     125         97
+Isolde          cyberbahamut                188        111
+Total health of Army 2: 1294
 
 Attacker                    Damage  Army     Defender                   Defender's Health  Army    
 
---- Duel #1: Chester the macara (Army 1) vs Petra the superbahamut (Army 2) ---
-Chester the macara attacks first!
-Chester the macara              46  Army 1   Petra the superbahamut                   129  Army 2  
-Petra the superbahamut         144  Army 2   Chester the macara                        29  Army 1  
-Chester the macara             136  Army 1   Petra the superbahamut                     0  Army 2  
->> Chester the macara defeated Petra the superbahamut!
+--- Duel #1: Cassia the macara (Army 1) vs Theron the macara (Army 2) ---
+Cassia the macara attacks first!
+Cassia the macara               49  Army 1   Theron the macara                         15  Army 2  
+Theron the macara               33  Army 2   Cassia the macara                         37  Army 1  
+Cassia the macara               57  Army 1   Theron the macara                          0  Army 2  
+>> Cassia the macara defeated Theron the macara!
 
---- Duel #2: Morwen the macara (Army 1) vs Lunara the superbahamut (Army 2) ---
-Lunara the superbahamut attacks first!
-Lunara the superbahamut         60  Army 2   Morwen the macara                          0  Army 1  
->> Lunara the superbahamut defeated Morwen the macara!
+--- Duel #2: Chester the superbahamut (Army 1) vs Thorfin the macara (Army 2) ---
+Chester the superbahamut attacks first!
+Chester the superbahamut        34  Army 1   Thorfin the macara                       128  Army 2  
+Thorfin the macara             174  Army 2   Chester the superbahamut                   0  Army 1  
+>> Thorfin the macara defeated Chester the superbahamut!
 
---- Duel #3: Cookie the superbahamut (Army 1) vs Karan the superbahamut (Army 2) ---
-Cookie the superbahamut attacks first!
-Cookie the superbahamut        286  Army 1   Karan the superbahamut                     0  Army 2  
->> Cookie the superbahamut defeated Karan the superbahamut!
+--- Duel #3: Hollis the bahamut (Army 1) vs Petra the macara (Army 2) ---
+Petra the macara attacks first!
+Petra the macara                36  Army 2   Hollis the bahamut                       126  Army 1  
+Hollis the bahamut             175  Army 1   Petra the macara                           0  Army 2  
+>> Hollis the bahamut defeated Petra the macara!
 
---- Duel #4: Aldric the macara (Army 1) vs Kaelith the superbahamut (Army 2) ---
-Kaelith the superbahamut attacks first!
-Kaelith the superbahamut        29  Army 2   Aldric the macara                         79  Army 1  
-Aldric the macara              298  Army 1   Kaelith the superbahamut                   0  Army 2  
->> Aldric the macara defeated Kaelith the superbahamut!
+--- Duel #4: Karan the superbahamut (Army 1) vs Quillon the bahamut (Army 2) ---
+Quillon the bahamut attacks first!
+Quillon the bahamut             28  Army 2   Karan the superbahamut                    71  Army 1  
+Karan the superbahamut          94  Army 1   Quillon the bahamut                        0  Army 2  
+>> Karan the superbahamut defeated Quillon the bahamut!
 
---- Duel #5: Orrin the superbahamut (Army 1) vs Lagnar the cyberbahamut (Army 2) ---
-Lagnar the cyberbahamut attacks first!
-Lagnar the cyberbahamut        162  Army 2   Orrin the superbahamut                     0  Army 1  
->> Lagnar the cyberbahamut defeated Orrin the superbahamut!
+--- Duel #5: Seren the macara (Army 1) vs Morwen the macara (Army 2) ---
+Morwen the macara attacks first!
+Morwen the macara               21  Army 2   Seren the macara                         144  Army 1  
+Seren the macara                68  Army 1   Morwen the macara                         74  Army 2  
+Morwen the macara              130  Army 2   Seren the macara                          14  Army 1  
+Seren the macara               224  Army 1   Morwen the macara                          0  Army 2  
+>> Seren the macara defeated Morwen the macara!
 
---- Duel #6: Seren the macara (Army 1) vs Dorian the superbahamut (Army 2) ---
-Dorian the superbahamut attacks first!
-Dorian the superbahamut        161  Army 2   Seren the macara                          23  Army 1  
-Seren the macara                78  Army 1   Dorian the superbahamut                   50  Army 2  
-Dorian the superbahamut         71  Army 2   Seren the macara                           0  Army 1  
->> Dorian the superbahamut defeated Seren the macara!
+--- Duel #6: Kaelith the cyberbahamut (Army 1) vs Dorian the bahamut (Army 2) ---
+Kaelith the cyberbahamut attacks first!
+Kaelith the cyberbahamut       136  Army 1   Dorian the bahamut                        39  Army 2  
+Dorian the bahamut              33  Army 2   Kaelith the cyberbahamut                  54  Army 1  
+Kaelith the cyberbahamut        49  Army 1   Dorian the bahamut                         0  Army 2  
+>> Kaelith the cyberbahamut defeated Dorian the bahamut!
 
---- Duel #7: Grisha the cyberbahamut (Army 1) vs Scrandal the macara (Army 2) ---
-Grisha the cyberbahamut attacks first!
-Grisha the cyberbahamut         32  Army 1   Scrandal the macara                       32  Army 2  
-Scrandal the macara             12  Army 2   Grisha the cyberbahamut                  166  Army 1  
-Grisha the cyberbahamut         79  Army 1   Scrandal the macara                        0  Army 2  
->> Grisha the cyberbahamut defeated Scrandal the macara!
-
---- Duel #8: Quillon the superbahamut (Army 1) vs Theron the superbahamut (Army 2) ---
-Quillon the superbahamut attacks first!
-Quillon the superbahamut       251  Army 1   Theron the superbahamut                    0  Army 2  
->> Quillon the superbahamut defeated Theron the superbahamut!
-
---- Duel #9: Clamar the cyberbahamut (Army 1) vs Hollis the superbahamut (Army 2) ---
-Hollis the superbahamut attacks first!
-Hollis the superbahamut        221  Army 2   Clamar the cyberbahamut                    0  Army 1  
->> Hollis the superbahamut defeated Clamar the cyberbahamut!
-
---- Duel #10: Ragnar the cyberbahamut (Army 1) vs Faelan the superbahamut (Army 2) ---
-Ragnar the cyberbahamut attacks first!
-Ragnar the cyberbahamut         23  Army 1   Faelan the superbahamut                  142  Army 2  
-Faelan the superbahamut         40  Army 2   Ragnar the cyberbahamut                   89  Army 1  
-Ragnar the cyberbahamut          3  Army 1   Faelan the superbahamut                  139  Army 2  
-Faelan the superbahamut        176  Army 2   Ragnar the cyberbahamut                    0  Army 1  
->> Faelan the superbahamut defeated Ragnar the cyberbahamut!
-
---- Duel #11: Nyx the bahamut (Army 1) vs Cassia the cyberbahamut (Army 2) ---
+--- Duel #7: Faelan the macara (Army 1) vs Nyx the bahamut (Army 2) ---
 Nyx the bahamut attacks first!
-Nyx the bahamut                 43  Army 1   Cassia the cyberbahamut                  110  Army 2  
-Cassia the cyberbahamut         50  Army 2   Nyx the bahamut                           33  Army 1  
-Nyx the bahamut                 36  Army 1   Cassia the cyberbahamut                   74  Army 2  
-Cassia the cyberbahamut        129  Army 2   Nyx the bahamut                            0  Army 1  
->> Cassia the cyberbahamut defeated Nyx the bahamut!
+Nyx the bahamut                 10  Army 2   Faelan the macara                        175  Army 1  
+Faelan the macara              186  Army 1   Nyx the bahamut                            0  Army 2  
+>> Faelan the macara defeated Nyx the bahamut!
 
---- Duel #12: Isolde the bahamut (Army 1) vs Thorfin the cyberbahamut (Army 2) ---
-Thorfin the cyberbahamut attacks first!
-Thorfin the cyberbahamut        69  Army 2   Isolde the bahamut                        53  Army 1  
-Isolde the bahamut              35  Army 1   Thorfin the cyberbahamut                  68  Army 2  
-Thorfin the cyberbahamut        98  Army 2   Isolde the bahamut                         0  Army 1  
->> Thorfin the cyberbahamut defeated Isolde the bahamut!
+--- Duel #8: Lunara the superbahamut (Army 1) vs Scrandal the superbahamut (Army 2) ---
+Scrandal the superbahamut attacks first!
+Scrandal the superbahamut      137  Army 2   Lunara the superbahamut                   56  Army 1  
+Lunara the superbahamut        199  Army 1   Scrandal the superbahamut                  0  Army 2  
+>> Lunara the superbahamut defeated Scrandal the superbahamut!
+
+--- Duel #9: Ragnar the cyberbahamut (Army 1) vs Cookie the superbahamut (Army 2) ---
+Ragnar the cyberbahamut attacks first!
+Ragnar the cyberbahamut        129  Army 1   Cookie the superbahamut                    0  Army 2  
+>> Ragnar the cyberbahamut defeated Cookie the superbahamut!
+
+--- Duel #10: Lagnar the cyberbahamut (Army 1) vs Aldric the bahamut (Army 2) ---
+Lagnar the cyberbahamut attacks first!
+Lagnar the cyberbahamut         91  Army 1   Aldric the bahamut                        11  Army 2  
+Aldric the bahamut              62  Army 2   Lagnar the cyberbahamut                   80  Army 1  
+Lagnar the cyberbahamut         79  Army 1   Aldric the bahamut                         0  Army 2  
+>> Lagnar the cyberbahamut defeated Aldric the bahamut!
+
+--- Duel #11: Clamar the cyberbahamut (Army 1) vs Grisha the bahamut (Army 2) ---
+Grisha the bahamut attacks first!
+Grisha the bahamut              17  Army 2   Clamar the cyberbahamut                  165  Army 1  
+Clamar the cyberbahamut         93  Army 1   Grisha the bahamut                         4  Army 2  
+Grisha the bahamut              15  Army 2   Clamar the cyberbahamut                  150  Army 1  
+Clamar the cyberbahamut         93  Army 1   Grisha the bahamut                         0  Army 2  
+>> Clamar the cyberbahamut defeated Grisha the bahamut!
+
+--- Duel #12: Orrin the cyberbahamut (Army 1) vs Isolde the cyberbahamut (Army 2) ---
+Orrin the cyberbahamut attacks first!
+Orrin the cyberbahamut           5  Army 1   Isolde the cyberbahamut                  106  Army 2  
+Isolde the cyberbahamut         36  Army 2   Orrin the cyberbahamut                    91  Army 1  
+Orrin the cyberbahamut          59  Army 1   Isolde the cyberbahamut                   47  Army 2  
+Isolde the cyberbahamut         72  Army 2   Orrin the cyberbahamut                    19  Army 1  
+Orrin the cyberbahamut          59  Army 1   Isolde the cyberbahamut                    0  Army 2  
+>> Orrin the cyberbahamut defeated Isolde the cyberbahamut!
 
 Army 1 Stats after the Battle
 Creature        Type                   Strength     Health
-Chester         macara                      170         29
-Morwen          macara                       68          0
-Cookie          superbahamut                175        124
-Aldric          macara                      155         79
-Orrin           superbahamut                 86          0
-Seren           macara                      102          0
-Grisha          cyberbahamut                 97        166
-Quillon         superbahamut                177         65
-Clamar          cyberbahamut                 82          0
-Ragnar          cyberbahamut                147          0
-Nyx             bahamut                      73          0
-Isolde          bahamut                     104          0
-Total health of Army 1: 463
+Cassia          macara                       67         37
+Chester         superbahamut                183          0
+Hollis          bahamut                     194        126
+Karan           superbahamut                181         71
+Seren           macara                      128         14
+Kaelith         cyberbahamut                116         54
+Faelan          macara                       95        175
+Lunara          superbahamut                173         56
+Ragnar          cyberbahamut                142        195
+Lagnar          cyberbahamut                155         80
+Clamar          cyberbahamut                171        150
+Orrin           cyberbahamut                103         19
+Total health of Army 1: 977
 
 Army 2 Stats after the Battle
 Creature        Type                   Strength     Health
-Petra           superbahamut                157          0
-Lunara          superbahamut                 89         52
-Karan           superbahamut                147          0
-Kaelith         superbahamut                 69          0
-Lagnar          cyberbahamut                165        154
-Dorian          superbahamut                127         50
-Scrandal        macara                       60          0
-Theron          superbahamut                 61          0
-Hollis          superbahamut                122        192
-Faelan          superbahamut                102        139
-Cassia          cyberbahamut                143         74
-Thorfin         cyberbahamut                116         68
-Total health of Army 2: 729
+Theron          macara                       54          0
+Thorfin         macara                      112        128
+Petra           macara                      125          0
+Quillon         bahamut                     154          0
+Morwen          macara                      147          0
+Dorian          bahamut                     124          0
+Nyx             bahamut                      95          0
+Scrandal        superbahamut                136          0
+Cookie          superbahamut                 65          0
+Aldric          bahamut                      67          0
+Grisha          bahamut                     125          0
+Isolde          cyberbahamut                188          0
+Total health of Army 2: 128
 
->>> Army 2 wins the battle! <<<
-Army 1 overall health: 463
-Army 2 overall health: 729
+>>> Army 1 wins the battle! <<<
+Army 1 overall health: 977
+Army 2 overall health: 128
 
 === ARMIES BATTLE ARENA ===
 1. Battle
@@ -700,5 +700,4 @@ Enter choice: 2
 
 Exiting battle application. Goodbye!
 
-Process finished with exit code 0
-*/
+Process finished with exit code 0*/
